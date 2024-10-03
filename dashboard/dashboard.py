@@ -8,27 +8,36 @@ from func import DataAnalyzer, BrazilMapPlotter
 
 sns.set(style='dark')
 
+
+
 # Dataset
 datetime_cols = ["order_approved_at", "order_delivered_carrier_date", "order_delivered_customer_date", "order_estimated_delivery_date", "order_purchase_timestamp", "shipping_limit_date"]
-ecommerce_df = pd.read_csv("https://raw.githubusercontent.com/ramdhan8/submission-dicoding-ecommerce/master/dashboard/df.csv")
-ecommerce_df.sort_values(by="order_approved_at", inplace=True)
-ecommerce_df.reset_index(inplace=True)
+all_df = pd.read_csv("https://raw.githubusercontent.com/ramdhan8/submission-dicoding-ecommerce/master/dashboard/df.csv")
+all_df.sort_values(by="order_approved_at", inplace=True)
+all_df.reset_index(inplace=True)
 
 # Geolocation Dataset
-geo_data = pd.read_csv("https://raw.githubusercontent.com/ramdhan8/submission-dicoding-ecommerce/master/dashboard/geolocation.csv")
-unique_geo_data = geo_data.drop_duplicates(subset='customer_unique_id')
+geolocation = pd.read_csv("https://raw.githubusercontent.com/ramdhan8/submission-dicoding-ecommerce/master/dashboard/geolocation.csv")
+data = geolocation.drop_duplicates(subset='customer_unique_id')
 
 for col in datetime_cols:
-    ecommerce_df[col] = pd.to_datetime(ecommerce_df[col])
+    all_df[col] = pd.to_datetime(all_df[col])
 
-min_date = ecommerce_df["order_approved_at"].min()
-max_date = ecommerce_df["order_approved_at"].max()
+min_date = all_df["order_approved_at"].min()
+max_date = all_df["order_approved_at"].max()
 
 # Sidebar
 with st.sidebar:
-    st.image("https://raw.githubusercontent.com/ramdhan8/submission-dicoding-ecommerce/master/dashboard/logo.png", width=100)
-    
-    # Date Range Selector
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.write(' ')
+    with col2:
+        st.image("https://raw.githubusercontent.com/ramdhan8/submission-dicoding-ecommerce/master/dashboard/logo.png"
+                 , width=100)
+    with col3:
+        st.write(' ')
+
+    # Date Range
     start_date, end_date = st.date_input(
         label="Select Date Range",
         value=[min_date, max_date],
@@ -36,42 +45,42 @@ with st.sidebar:
         max_value=max_date
     )
 
-# Filter data based on date range
-filtered_df = ecommerce_df[(ecommerce_df["order_approved_at"] >= str(start_date)) & 
-                           (ecommerce_df["order_approved_at"] <= str(end_date))]
+# Main
+main_df = all_df[(all_df["order_approved_at"] >= str(start_date)) & 
+                 (all_df["order_approved_at"] <= str(end_date))]
 
-analyzer = DataAnalyzer(filtered_df)
-brazil_plotter = BrazilMapPlotter(unique_geo_data, plt, mpimg, urllib, st)
+function = DataAnalyzer(main_df)
+map_plot = BrazilMapPlotter(data, plt, mpimg, urllib, st)
 
-# Data Analysis
-daily_orders = analyzer.create_daily_orders_df()
-total_spending = analyzer.create_sum_spend_df()
-order_items = analyzer.create_sum_order_items_df()
-review_score_data, most_common_review = analyzer.review_score_df()
-customer_state, most_common_state = analyzer.create_bystate_df()
-order_status_data, most_frequent_status = analyzer.create_order_status()
+daily_orders_df = function.create_daily_orders_df()
+sum_spend_df = function.create_sum_spend_df()
+sum_order_items_df = function.create_sum_order_items_df()
+review_score, common_score = function.review_score_df()
+state, most_common_state = function.create_bystate_df()
+order_status, common_status = function.create_order_status()
 
-# Streamlit App
-st.title("E-Commerce Public Data Dashboard")
+# Define your Streamlit app
+st.title("E-Commerce Public Data Analysis")
 
-st.write("**This dashboard provides an analysis of public e-commerce data.**")
+# Add text or descriptions
+st.write("**This is a dashboard for analyzing E-Commerce public data.**")
 
-# Daily Orders Section
-st.subheader("Orders Delivered Per Day")
+# Daily Orders Delivered
+st.subheader("Daily Orders Delivered")
 col1, col2 = st.columns(2)
 
 with col1:
-    total_order_count = daily_orders["order_count"].sum()
-    st.markdown(f"Total Orders: **{total_order_count}**")
+    total_order = daily_orders_df["order_count"].sum()
+    st.markdown(f"Total Order: **{total_order}**")
 
 with col2:
-    total_revenue_generated = daily_orders["revenue"].sum()
-    st.markdown(f"Total Revenue: **{total_revenue_generated}**")
+    total_revenue = daily_orders_df["revenue"].sum()
+    st.markdown(f"Total Revenue: **{total_revenue}**")
 
 fig, ax = plt.subplots(figsize=(12, 6))
 sns.lineplot(
-    x=daily_orders["order_approved_at"],
-    y=daily_orders["order_count"],
+    x=daily_orders_df["order_approved_at"],
+    y=daily_orders_df["order_count"],
     marker="o",
     linewidth=2,
     color="#90CAF9"
@@ -80,21 +89,21 @@ ax.tick_params(axis="x", rotation=45)
 ax.tick_params(axis="y", labelsize=15)
 st.pyplot(fig)
 
-# Customer Spending Section
-st.subheader("Customer Spending Patterns")
+# Customer Spend Money
+st.subheader("Customer Spend Money")
 col1, col2 = st.columns(2)
 
 with col1:
-    total_spent = total_spending["total_spend"].sum()
-    st.markdown(f"Total Spent: **{total_spent}**")
+    total_spend = sum_spend_df["total_spend"].sum()
+    st.markdown(f"Total Spend: **{total_spend}**")
 
 with col2:
-    avg_spending = total_spending["total_spend"].mean()
-    st.markdown(f"Average Spending: **{avg_spending}**")
+    avg_spend = sum_spend_df["total_spend"].mean()
+    st.markdown(f"Average Spend: **{avg_spend}**")
 
 fig, ax = plt.subplots(figsize=(12, 6))
 sns.lineplot(
-    data=total_spending,
+    data=sum_spend_df,
     x="order_approved_at",
     y="total_spend",
     marker="o",
@@ -106,77 +115,96 @@ ax.tick_params(axis="x", rotation=45)
 ax.tick_params(axis="y", labelsize=15)
 st.pyplot(fig)
 
-# Order Items Section
-st.subheader("Ordered Items Overview")
+# Order Items
+st.subheader("Order Items")
 col1, col2 = st.columns(2)
 
 with col1:
-    total_items_ordered = order_items["product_count"].sum()
-    st.markdown(f"Total Items Ordered: **{total_items_ordered}**")
+    total_items = sum_order_items_df["product_count"].sum()
+    st.markdown(f"Total Items: **{total_items}**")
 
 with col2:
-    avg_items_ordered = order_items["product_count"].mean()
-    st.markdown(f"Average Items Ordered: **{avg_items_ordered}**")
+    avg_items = sum_order_items_df["product_count"].mean()
+    st.markdown(f"Average Items: **{avg_items}**")
 
 fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(45, 25))
 
-# Top 5 Products
-sns.barplot(x="product_count", y="product_category_name_english", data=order_items.head(5), palette="viridis", ax=ax[0])
-ax[0].set_xlabel("Sales Count", fontsize=80)
-ax[0].set_title("Top Sold Products", loc="center", fontsize=90)
-ax[0].tick_params(axis='y', labelsize=55)
+sns.barplot(x="product_count", y="product_category_name_english", data=sum_order_items_df.head(5), palette="viridis", ax=ax[0])
+ax[0].set_ylabel(None)
+ax[0].set_xlabel("Number of Sales", fontsize=80)
+ax[0].set_title("Most sold products", loc="center", fontsize=90)
+ax[0].tick_params(axis ='y', labelsize=55)
+ax[0].tick_params(axis ='x', labelsize=50)
 
-# Least 5 Products
-sns.barplot(x="product_count", y="product_category_name_english", data=order_items.tail(5), palette="viridis", ax=ax[1])
+sns.barplot(x="product_count", y="product_category_name_english", data=sum_order_items_df.sort_values(by="product_count", ascending=True).head(5), palette="viridis", ax=ax[1])
+ax[1].set_ylabel(None)
+ax[1].set_xlabel("Number of Sales", fontsize=80)
 ax[1].invert_xaxis()
-ax[1].set_xlabel("Sales Count", fontsize=80)
-ax[1].set_title("Least Sold Products", loc="center", fontsize=90)
+ax[1].yaxis.set_label_position("right")
+ax[1].yaxis.tick_right()
+ax[1].set_title("Fewest products sold", loc="center", fontsize=90)
 ax[1].tick_params(axis='y', labelsize=55)
+ax[1].tick_params(axis='x', labelsize=50)
+
 st.pyplot(fig)
 
-# Review Scores Section
-st.subheader("Customer Review Scores")
+# Review Score
+st.subheader("Review Score")
 col1, col2 = st.columns(2)
 
 with col1:
-    avg_review_score = review_score_data.mean()
+    avg_review_score = review_score.mean()
     st.markdown(f"Average Review Score: **{avg_review_score:.2f}**")
 
 with col2:
-    common_review_score = review_score_data.value_counts().idxmax()
-    st.markdown(f"Most Common Review Score: **{common_review_score}**")
+    most_common_review_score = review_score.value_counts().idxmax()
+    st.markdown(f"Most Common Review Score: **{most_common_review_score}**")
 
 fig, ax = plt.subplots(figsize=(12, 6))
-colors = sns.color_palette("viridis", len(review_score_data))
+colors = sns.color_palette("viridis", len(review_score))
 
-sns.barplot(x=review_score_data.index, y=review_score_data.values, palette=colors)
-plt.title("Review Scores Distribution", fontsize=15)
+sns.barplot(x=review_score.index,
+            y=review_score.values,
+            order=review_score.index,
+            palette=colors)
+
+plt.title("Customer Review Scores for Service", fontsize=15)
 plt.xlabel("Rating")
 plt.ylabel("Count")
-for i, v in enumerate(review_score_data.values):
-    ax.text(i, v + 5, str(v), ha='center', fontsize=12, color='black')
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
+
+# Menambahkan label di atas setiap bar
+for i, v in enumerate(review_score.values):
+    ax.text(i, v + 5, str(v), ha='center', va='bottom', fontsize=12, color='black')
 
 st.pyplot(fig)
 
-# Customer Demographics Section
-st.subheader("Customer Demographics")
+# Customer Demographic
+st.subheader("Customer Demographic")
 tab1, tab2 = st.tabs(["State", "Geolocation"])
 
 with tab1:
-    common_state = customer_state.customer_state.value_counts().index[0]
-    st.markdown(f"Most Common State: **{common_state}**")
+    most_common_state = state.customer_state.value_counts().index[0]
+    st.markdown(f"Most Common State: **{most_common_state}**")
 
     fig, ax = plt.subplots(figsize=(12, 6))
-    sns.barplot(x=customer_state.customer_state.value_counts().index,
-                y=customer_state.customer_count.values, 
-                palette="viridis")
-    plt.title("Customers by State", fontsize=15)
+    sns.barplot(x=state.customer_state.value_counts().index,
+                y=state.customer_count.values, 
+                data=state,
+                palette="viridis"
+                    )
+
+    plt.title("Number customers from State", fontsize=15)
+    plt.xlabel("State")
+    plt.ylabel("Number of Customers")
+    plt.xticks(fontsize=12)
     st.pyplot(fig)
 
 with tab2:
-    brazil_plotter.plot()
+    map_plot.plot()
 
-    with st.expander("Explanation"):
-        st.write("The map highlights customer concentration, showing a higher density in the southeastern and southern regions, particularly in major cities like São Paulo and Rio de Janeiro.")
+    with st.expander("See Explanation"):
+        st.write('According to the graph that has been created, there are more customers in the southeast and south. Other information, there are more customers in cities that are capitals (São Paulo, Rio de Janeiro, Porto Alegre, and others).')
 
-st.caption('All rights reserved. Custom project by Nur Rahmat Ramdhan © 2024')
+st.caption('Copyright (C) Nur Rahmat Ramdhan')
