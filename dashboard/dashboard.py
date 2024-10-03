@@ -12,12 +12,12 @@ sns.set(style='dark')
 
 # Dataset
 datetime_cols = ["order_approved_at", "order_delivered_carrier_date", "order_delivered_customer_date", "order_estimated_delivery_date", "order_purchase_timestamp", "shipping_limit_date"]
-all_df = pd.read_csv("https://raw.githubusercontent.com/ramdhan8/submission-Dicoding/main/dashboard/df.csv")
+all_df = pd.read_csv("https://raw.githubusercontent.com/ramdhan8/submission-dicoding-ecommerce/master/dashboard/df.csv")
 all_df.sort_values(by="order_approved_at", inplace=True)
 all_df.reset_index(inplace=True)
 
 # Geolocation Dataset
-geolocation = pd.read_csv("https://raw.githubusercontent.com/ramdhan8/e-commerce-Dicoding/main/dashboard/geolocation.csv")
+geolocation = pd.read_csv("https://raw.githubusercontent.com/ramdhan8/submission-dicoding-ecommerce/master/dashboard/geolocation.csv")
 data = geolocation.drop_duplicates(subset='customer_unique_id')
 
 for col in datetime_cols:
@@ -32,7 +32,7 @@ with st.sidebar:
     with col1:
         st.write(' ')
     with col2:
-        st.image("https://raw.githubusercontent.com/ramdhan8/e-commerce-Dicoding/main/dashboard/logo.png"
+        st.image("https://raw.githubusercontent.com/ramdhan8/submission-dicoding-ecommerce/master/dashboard/logo.png"
                  , width=100)
     with col3:
         st.write(' ')
